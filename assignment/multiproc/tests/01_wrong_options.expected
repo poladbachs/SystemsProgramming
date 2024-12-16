@@ -1,0 +1,19 @@
+Usage: ./multiproc [options] [file]...
+
+Arguments:
+  [file]...       The list of regular files on which the program should
+                  apply the processing and summarize operations. The
+                  list can also contain some directories. In case of a
+                  directory, the program will apply the processing and
+                  summarizing operation on all regular files within the
+                  directory and its sub-directories.
+
+Options:
+  -p <prog>, --proc <prog>             The program for the processing
+                                       operation (default: cat)
+  -s <prog>, --summary <prog>          The program for the summarize
+                                       operation (default: cat)
+  -w <workers>, --workers <workers>    The number of forked processes
+                                       (default: 5, max: 20)
+  -h, --help                           Display this help and exit
+Exit code is: 1

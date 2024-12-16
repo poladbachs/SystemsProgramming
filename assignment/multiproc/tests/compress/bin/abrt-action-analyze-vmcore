@@ -1,0 +1,94 @@
+#!/usr/bin/python3 -u
+# -*- coding: utf-8 -*-
+# Generate backtrace from vmcore
+#
+
+import os
+import sys
+import getopt
+from subprocess import Popen, PIPE
+
+from reportclient import verbose, set_verbosity, error_msg_and_die, error_msg
+
+GETTEXT_PROGNAME = "abrt"
+import locale
+import gettext
+
+_ = lambda x: gettext.gettext(x)
+
+def init_gettext():
+    try:
+        locale.setlocale(locale.LC_ALL, "")
+    except locale.Error:
+        os.environ['LC_ALL'] = 'C'
+        locale.setlocale(locale.LC_ALL, "")
+    gettext.bindtextdomain(GETTEXT_PROGNAME, '/usr/share/locale')
+    gettext.textdomain(GETTEXT_PROGNAME)
+
+
+PROGNAME = "abrt-action-analyze-vmcore"
+
+# everything was ok
+RETURN_OK = 0
+# serious problem, should be logged somewhere
+RETURN_FAILURE = 2
+
+ver = ""
+if __name__ == "__main__":
+    dmesg_log = "dmesg_log"
+    cachedirs = []
+    vmlinux_di_cachedir = ""
+    vmlinux_di_path = ""
+    tmpdir = ""
+    vmcore = ""
+
+    init_gettext()
+
+    help_text = _("Usage: {0} [-v[v]] [--core=VMCORE]").format(PROGNAME)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hvd", ["help", "core="])
+    except getopt.GetoptError as err:
+        error_msg(str(err))  # prints something like "option -a not recognized"
+        error_msg_and_die(help_text)
+    usercache = False
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print(help_text)
+            exit(0)
+        elif opt == "-v":
+            verbose += 1
+        elif opt in ("-d"):
+            try:
+                os.chdir(arg)
+            except OSError as ex:
+                print(ex)
+                sys.exit(RETURN_FAILURE)
+
+    if not vmcore:
+        vmcore = os.path.join(os.getcwd(), "vmcore")
+
+    set_verbosity(verbose)
+
+    if not os.path.exists(vmcore):
+        print(_("File {0} doesn't exist").format(vmcore))
+        sys.exit(RETURN_FAILURE)
+
+    print(_("Extracting the oops text from core"))
+    crash = Popen(["makedumpfile", "--dump-dmesg", "-f", vmcore, dmesg_log], stdout=PIPE, stderr=PIPE, bufsize=-1)
+    out, err = crash.communicate()
+
+    if crash.returncode != 0:
+        error_msg_and_die(_("Can't process {0}:\n{1}").format(vmcore, err))
+
+    backtrace_file = open("backtrace", "w")
+    dump_oops = Popen(["abrt-dump-oops", "-u", ".", dmesg_log], stdout=backtrace_file, stderr=PIPE, bufsize=-1)
+    out, err = dump_oops.communicate()
+    backtrace_file.close()
+    ret = dump_oops.returncode
+    if dump_oops.returncode != 0:
+        print(_("Can't extract the oops message: '{0}'").format(err))
+        sys.exit(ret)
+
+    print(_("Oops text extracted successfully"))
+    sys.exit(ret)

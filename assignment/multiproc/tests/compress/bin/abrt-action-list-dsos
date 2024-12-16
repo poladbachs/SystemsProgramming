@@ -1,0 +1,110 @@
+#!/usr/bin/python3 -u
+# WARNING: python -u means unbuffered I/O. Without it the messages are
+# passed to the parent asynchronously which looks bad in clients.
+
+import sys
+import os
+import getopt
+import rpm
+
+def log_warning(s):
+    sys.stderr.write("%s\n" % s)
+
+def error_msg(s):
+    sys.stderr.write("%s\n" % s)
+
+def error_msg_and_die(s):
+    sys.stderr.write("%s\n" % s)
+    sys.exit(1)
+
+def xopen(name, mode):
+    try:
+        r = open(name, mode)
+    except IOError as e:
+        error_msg_and_die("Can't open '%s': %s" % (name, e))
+    return r
+
+
+def parse_maps(maps_path):
+    try:
+        f = xopen(maps_path, "r")
+        # We want to handle both /proc/PID/maps format:
+        #  4f200000-4f215000 r-xp 00000000 08:03 1835520   /usr/lib64/libz.so.1.2.7
+        # and Xorg backtrace format:
+        #  [ 86985.880] 9: /usr/lib64/libdrm.so.2 (drmHandleEvent+0xa3) [0x376b407513]
+        # To do that, we take only lines which have a / character,
+        # then for each line we start at first /, then remove everything after first whitespace
+        files = [x[x.find('/'):].split()[0] for x in f.readlines() if x.find('/') > -1]
+        # set() uniqifies the list of filenames
+        return set(files)
+    except IOError as e:
+        error_msg_and_die("Can't read '%s': %s" % (maps_path, e))
+
+if __name__ == "__main__":
+    progname = os.path.basename(sys.argv[0])
+    help_text = ("Usage: %s [-o OUTFILE] -m PROC_PID_MAP_FILE") % progname
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "o:m:h", ["help"])
+    except getopt.GetoptError as err:
+        error_msg(err) # prints something like "option -a not recognized"
+        error_msg_and_die(help_text)
+
+    opt_o = None
+    memfile = None
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print(help_text)
+            exit(0)
+        #elif opt == "-v":
+        #    verbose += 1
+        elif opt == "-o":
+            opt_o = arg
+        elif opt == "-m":
+            memfile = arg
+
+    if not memfile:
+        error_msg("MAP_FILE is not specified")
+        error_msg_and_die(help_text)
+
+    try:
+        # Note that we open -o FILE only when we reach the point
+        # when we are definitely going to write something to it
+        outfile = sys.stdout
+        outname = opt_o
+        try:
+            dso_paths = parse_maps(memfile)
+            for path in dso_paths:
+                ts = rpm.TransactionSet()
+                mi = ts.dbMatch('basenames', path)
+                if len(mi):
+                    for h in mi:
+                        if outname:
+                            outfile = xopen(outname, "w")
+                            outname = None
+
+                        vendor = h[rpm.RPMTAG_VENDOR]
+                        if vendor is not None and hasattr(vendor, 'decode'):
+                            vendor = vendor.decode('utf-8')
+
+                        rpmtag_nevra = h[rpm.RPMTAG_NEVRA]
+                        # FIXME change from bugzilla #1693751
+                        # can be removed with rpm 4.15
+                        if hasattr(rpmtag_nevra, 'decode'):
+                            rpmtag_nevra = rpmtag_nevra.decode('utf-8')
+
+                        outfile.write("%s %s (%s) %s\n" %
+                                      (path,
+                                       rpmtag_nevra,
+                                       vendor,
+                                       h[rpm.RPMTAG_INSTALLTIME])
+                                      )
+
+        except Exception as ex:
+            error_msg_and_die("Can't get the DSO list: %s" % ex)
+
+        outfile.close()
+    except:
+        if not opt_o:
+            opt_o = "<stdout>"
+        error_msg_and_die("Error writing to '%s'" % opt_o)

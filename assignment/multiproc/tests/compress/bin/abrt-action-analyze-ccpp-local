@@ -1,0 +1,4 @@
+#!/usr/bin/sh
+
+abrt-action-generate-backtrace
+abrt-action-analyze-backtrace

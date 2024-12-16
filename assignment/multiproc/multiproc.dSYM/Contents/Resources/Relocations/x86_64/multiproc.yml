@@ -1,0 +1,28 @@
+---
+triple:          'x86_64-apple-darwin'
+binary-path:     multiproc
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D30, symSize: 0xAB0 }
+  - { offsetInCU: 0x4D, offset: 0x4D, size: 0x8, addend: 0x0, symName: _proc_prog, symObjAddr: 0x5A30, symBinAddr: 0x100008020, symSize: 0x0 }
+  - { offsetInCU: 0x67, offset: 0x67, size: 0x8, addend: 0x0, symName: _summ_prog, symObjAddr: 0x5A38, symBinAddr: 0x100008028, symSize: 0x0 }
+  - { offsetInCU: 0x7C, offset: 0x7C, size: 0x8, addend: 0x0, symName: _file_list_tail, symObjAddr: 0x5A40, symBinAddr: 0x100008030, symSize: 0x0 }
+  - { offsetInCU: 0xC7, offset: 0xC7, size: 0x8, addend: 0x0, symName: _nfiles, symObjAddr: 0x5A20, symBinAddr: 0x100008010, symSize: 0x0 }
+  - { offsetInCU: 0xE3, offset: 0xE3, size: 0x8, addend: 0x0, symName: _workers, symObjAddr: 0x1B08, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0xF8, offset: 0xF8, size: 0x8, addend: 0x0, symName: _file_list_head, symObjAddr: 0x5A28, symBinAddr: 0x100008018, symSize: 0x0 }
+  - { offsetInCU: 0x10D, offset: 0x10D, size: 0x8, addend: 0x0, symName: _summary_stdin_fd, symObjAddr: 0x1B0C, symBinAddr: 0x100008004, symSize: 0x0 }
+  - { offsetInCU: 0x122, offset: 0x122, size: 0x8, addend: 0x0, symName: _summary_pid, symObjAddr: 0x1B10, symBinAddr: 0x100008008, symSize: 0x0 }
+  - { offsetInCU: 0x1F4, offset: 0x1F4, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001D30, symSize: 0xAB0 }
+  - { offsetInCU: 0x407, offset: 0x407, size: 0x8, addend: 0x0, symName: _parse_args, symObjAddr: 0xAB0, symBinAddr: 0x1000027E0, symSize: 0x370 }
+  - { offsetInCU: 0x48A, offset: 0x48A, size: 0x8, addend: 0x0, symName: _start_summarizer_process, symObjAddr: 0xE20, symBinAddr: 0x100002B50, symSize: 0x150 }
+  - { offsetInCU: 0x4BF, offset: 0x4BF, size: 0x8, addend: 0x0, symName: _cleanup_and_exit, symObjAddr: 0xF70, symBinAddr: 0x100002CA0, symSize: 0x170 }
+  - { offsetInCU: 0x51B, offset: 0x51B, size: 0x8, addend: 0x0, symName: _start_worker, symObjAddr: 0x10E0, symBinAddr: 0x100002E10, symSize: 0x1F0 }
+  - { offsetInCU: 0x572, offset: 0x572, size: 0x8, addend: 0x0, symName: _safe_read_all, symObjAddr: 0x12D0, symBinAddr: 0x100003000, symSize: 0x60 }
+  - { offsetInCU: 0x5C9, offset: 0x5C9, size: 0x8, addend: 0x0, symName: _safe_write_all, symObjAddr: 0x1330, symBinAddr: 0x100003060, symSize: 0xA0 }
+  - { offsetInCU: 0x64C, offset: 0x64C, size: 0x8, addend: 0x0, symName: _print_help, symObjAddr: 0x13D0, symBinAddr: 0x100003100, symSize: 0x30 }
+  - { offsetInCU: 0x670, offset: 0x670, size: 0x8, addend: 0x0, symName: _collect_files, symObjAddr: 0x1400, symBinAddr: 0x100003130, symSize: 0x1C0 }
+  - { offsetInCU: 0x724, offset: 0x724, size: 0x8, addend: 0x0, symName: _is_directory, symObjAddr: 0x15C0, symBinAddr: 0x1000032F0, symSize: 0x60 }
+  - { offsetInCU: 0x75B, offset: 0x75B, size: 0x8, addend: 0x0, symName: _is_regular_file, symObjAddr: 0x1620, symBinAddr: 0x100003350, symSize: 0x60 }
+  - { offsetInCU: 0x792, offset: 0x792, size: 0x8, addend: 0x0, symName: _add_file, symObjAddr: 0x1680, symBinAddr: 0x1000033B0, symSize: 0xE0 }
+  - { offsetInCU: 0x7C8, offset: 0x7C8, size: 0x8, addend: 0x0, symName: _add_directory_recursive, symObjAddr: 0x1760, symBinAddr: 0x100003490, symSize: 0x340 }
+  - { offsetInCU: 0x858, offset: 0x858, size: 0x8, addend: 0x0, symName: _free_file_list, symObjAddr: 0x1AA0, symBinAddr: 0x1000037D0, symSize: 0x68 }
+...
