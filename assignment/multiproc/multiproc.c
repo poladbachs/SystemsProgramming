@@ -77,176 +77,6 @@ static int start_worker(const char *filename, Worker *worker);
 static int safe_write_all(int fd, const void *buf, size_t count);
 static ssize_t safe_read_all(int fd, void *buf, size_t count);
 
-/* Main Function */
-int main(int argc, char **argv) {
-    /* Parse command-line arguments */
-    if (parse_args(argc, argv) < 0) {
-        exit(EXIT_FAILURE);
-    }
-
-    /* If no files to process, exit successfully */
-    if (nfiles == 0) {
-        exit(EXIT_SUCCESS);
-    }
-
-    /* Start the summarizer process */
-    start_summarizer_process();
-
-    /* Initialize worker list */
-    Worker *workers_list = calloc(workers, sizeof(Worker));
-    if (!workers_list) {
-        fprintf(stderr, "Failed to allocate memory for workers\n");
-        cleanup_and_exit(EXIT_FAILURE, NULL, 0);
-    }
-
-    int active_workers = 0;
-    FileNode *current_file = file_list_head;
-
-    /* Start initial workers */
-    for (int i = 0; i < workers && current_file; i++) {
-        if (start_worker(current_file->path, &workers_list[i]) < 0) {
-            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-        }
-        active_workers++;
-        current_file = current_file->next;
-    }
-
-    /* Main loop: monitor worker outputs and forward to summarizer */
-    while (active_workers > 0) {
-        fd_set rfds;
-        FD_ZERO(&rfds);
-        int maxfd = -1;
-
-        /* Add worker fds to the read set */
-        for (int i = 0; i < workers; i++) {
-            if (workers_list[i].pid > 0 && workers_list[i].fd >= 0) {
-                FD_SET(workers_list[i].fd, &rfds);
-                if (workers_list[i].fd > maxfd) {
-                    maxfd = workers_list[i].fd;
-                }
-            }
-        }
-
-        if (maxfd == -1) {
-            break; // No active fds
-        }
-
-        int sel = select(maxfd + 1, &rfds, NULL, NULL, NULL);
-        if (sel < 0) {
-            if (errno == EINTR)
-                continue;
-            fprintf(stderr, "Failed during select: %s\n", strerror(errno));
-            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-        }
-
-        /* Iterate through workers to check which ones have data */
-        for (int i = 0; i < workers; i++) {
-            if (workers_list[i].pid > 0 && workers_list[i].fd >= 0 && FD_ISSET(workers_list[i].fd, &rfds)) {
-                /* Read available data into buffer */
-                ssize_t bytes_read = safe_read_all(workers_list[i].fd, workers_list[i].buffer + workers_list[i].buf_size,
-                                                  READ_BUFFER_SIZE - workers_list[i].buf_size);
-                if (bytes_read < 0) {
-                    fprintf(stderr, "Failed to read from worker: %s\n", workers_list[i].current_file_path);
-                    cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                } else if (bytes_read == 0) {
-                    /* EOF Handling */
-                    close(workers_list[i].fd);
-                    workers_list[i].fd = -1;
-
-                    /* Wait for worker to terminate */
-                    int status;
-                    if (waitpid(workers_list[i].pid, &status, 0) < 0) {
-                        fprintf(stderr, "Failed to wait for worker process: %s\n", workers_list[i].current_file_path);
-                        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                    }
-
-                    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-                        fprintf(stderr, "Failed to process: %s\n", workers_list[i].current_file_path);
-                        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                    }
-
-                    active_workers--;
-
-                    /* Start a new worker if files remain */
-                    if (current_file) {
-                        if (start_worker(current_file->path, &workers_list[i]) < 0) {
-                            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                        }
-                        active_workers++;
-                        current_file = current_file->next;
-                    }
-
-                    /* Send any partial line without appending newline */
-                    if (workers_list[i].buf_pos < workers_list[i].buf_size) {
-                        if (safe_write_all(summary_stdin_fd, workers_list[i].buffer, workers_list[i].buf_pos) < 0) {
-                            fprintf(stderr, "Failed to write to summarizer\n");
-                            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                        }
-                        workers_list[i].buf_pos = 0;
-                        workers_list[i].buf_size = 0;
-                    }
-
-                    /* Free the current file path */
-                    free(workers_list[i].current_file_path);
-                    workers_list[i].current_file_path = NULL;
-                } else {
-                    workers_list[i].buf_size += bytes_read;
-
-                    /* Process complete lines */
-                    ssize_t start = 0;
-                    for (ssize_t j = 0; j < workers_list[i].buf_size; j++) {
-                        if (workers_list[i].buffer[j] == '\n') {
-                            ssize_t line_length = j - start + 1;
-                            if (safe_write_all(summary_stdin_fd, workers_list[i].buffer + start, line_length) < 0) {
-                                fprintf(stderr, "Failed to write to summarizer\n");
-                                cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-                            }
-                            start = j + 1;
-                            workers_list[i].buf_pos = 0;
-                        }
-                    }
-
-                    /* Move remaining partial data to the start of the buffer */
-                    if (start < workers_list[i].buf_size) {
-                        memmove(workers_list[i].buffer, workers_list[i].buffer + start, workers_list[i].buf_size - start);
-                        workers_list[i].buf_pos = workers_list[i].buf_size - start;
-                    } else {
-                        workers_list[i].buf_pos = 0;
-                    }
-                    workers_list[i].buf_size = workers_list[i].buf_pos;
-                }
-            }
-        }
-    }
-
-    /* After all workers are done, close summarizer stdin */
-    if (summary_stdin_fd >= 0) {
-        close(summary_stdin_fd);
-        summary_stdin_fd = -1;
-    }
-
-    /* Wait for summarizer process to terminate */
-    int summ_status;
-    if (waitpid(summary_pid, &summ_status, 0) < 0) {
-        fprintf(stderr, "Failed to wait for summarizer process\n");
-        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-    }
-    if (!WIFEXITED(summ_status) || WEXITSTATUS(summ_status) != 0) {
-        fprintf(stderr, "Summarizer process failed\n");
-        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
-    }
-
-    /* Free worker list */
-    for (int i = 0; i < workers; i++) {
-        if (workers_list[i].current_file_path) {
-            free(workers_list[i].current_file_path);
-        }
-    }
-    free(workers_list);
-
-    return EXIT_SUCCESS;
-}
-
 /* Function Definitions */
 
 /* Print the help message */
@@ -605,4 +435,174 @@ static ssize_t safe_read_all(int fd, void *buf, size_t count) {
         r = read(fd, buf, count);
     } while (r < 0 && errno == EINTR);
     return r;
+}
+
+/* Main Function */
+int main(int argc, char **argv) {
+    /* Parse command-line arguments */
+    if (parse_args(argc, argv) < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    /* If no files to process, exit successfully */
+    if (nfiles == 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* Start the summarizer process */
+    start_summarizer_process();
+
+    /* Initialize worker list */
+    Worker *workers_list = calloc(workers, sizeof(Worker));
+    if (!workers_list) {
+        fprintf(stderr, "Failed to allocate memory for workers\n");
+        cleanup_and_exit(EXIT_FAILURE, NULL, 0);
+    }
+
+    int active_workers = 0;
+    FileNode *current_file = file_list_head;
+
+    /* Start initial workers */
+    for (int i = 0; i < workers && current_file; i++) {
+        if (start_worker(current_file->path, &workers_list[i]) < 0) {
+            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+        }
+        active_workers++;
+        current_file = current_file->next;
+    }
+
+    /* Main loop: monitor worker outputs and forward to summarizer */
+    while (active_workers > 0) {
+        fd_set rfds;
+        FD_ZERO(&rfds);
+        int maxfd = -1;
+
+        /* Add worker fds to the read set */
+        for (int i = 0; i < workers; i++) {
+            if (workers_list[i].pid > 0 && workers_list[i].fd >= 0) {
+                FD_SET(workers_list[i].fd, &rfds);
+                if (workers_list[i].fd > maxfd) {
+                    maxfd = workers_list[i].fd;
+                }
+            }
+        }
+
+        if (maxfd == -1) {
+            break; // No active fds
+        }
+
+        int sel = select(maxfd + 1, &rfds, NULL, NULL, NULL);
+        if (sel < 0) {
+            if (errno == EINTR)
+                continue;
+            fprintf(stderr, "Failed during select: %s\n", strerror(errno));
+            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+        }
+
+        /* Iterate through workers to check which ones have data */
+        for (int i = 0; i < workers; i++) {
+            if (workers_list[i].pid > 0 && workers_list[i].fd >= 0 && FD_ISSET(workers_list[i].fd, &rfds)) {
+                /* Read available data into buffer */
+                ssize_t bytes_read = safe_read_all(workers_list[i].fd, workers_list[i].buffer + workers_list[i].buf_size,
+                                                  READ_BUFFER_SIZE - workers_list[i].buf_size);
+                if (bytes_read < 0) {
+                    fprintf(stderr, "Failed to read from worker: %s\n", workers_list[i].current_file_path);
+                    cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                } else if (bytes_read == 0) {
+                    /* EOF Handling */
+                    close(workers_list[i].fd);
+                    workers_list[i].fd = -1;
+
+                    /* Wait for worker to terminate */
+                    int status;
+                    if (waitpid(workers_list[i].pid, &status, 0) < 0) {
+                        fprintf(stderr, "Failed to wait for worker process: %s\n", workers_list[i].current_file_path);
+                        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                    }
+
+                    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+                        fprintf(stderr, "Failed to process: %s\n", workers_list[i].current_file_path);
+                        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                    }
+
+                    active_workers--;
+
+                    /* Start a new worker if files remain */
+                    if (current_file) {
+                        if (start_worker(current_file->path, &workers_list[i]) < 0) {
+                            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                        }
+                        active_workers++;
+                        current_file = current_file->next;
+                    }
+
+                    /* Send any partial line without appending newline */
+                    if (workers_list[i].buf_pos < workers_list[i].buf_size) {
+                        if (safe_write_all(summary_stdin_fd, workers_list[i].buffer, workers_list[i].buf_pos) < 0) {
+                            fprintf(stderr, "Failed to write to summarizer\n");
+                            cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                        }
+                        workers_list[i].buf_pos = 0;
+                        workers_list[i].buf_size = 0;
+                    }
+
+                    /* Free the current file path */
+                    free(workers_list[i].current_file_path);
+                    workers_list[i].current_file_path = NULL;
+                } else {
+                    workers_list[i].buf_size += bytes_read;
+
+                    /* Process complete lines */
+                    ssize_t start = 0;
+                    for (ssize_t j = 0; j < workers_list[i].buf_size; j++) {
+                        if (workers_list[i].buffer[j] == '\n') {
+                            ssize_t line_length = j - start + 1;
+                            if (safe_write_all(summary_stdin_fd, workers_list[i].buffer + start, line_length) < 0) {
+                                fprintf(stderr, "Failed to write to summarizer\n");
+                                cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+                            }
+                            start = j + 1;
+                            workers_list[i].buf_pos = 0;
+                        }
+                    }
+
+                    /* Move remaining partial data to the start of the buffer */
+                    if (start < workers_list[i].buf_size) {
+                        memmove(workers_list[i].buffer, workers_list[i].buffer + start, workers_list[i].buf_size - start);
+                        workers_list[i].buf_pos = workers_list[i].buf_size - start;
+                    } else {
+                        workers_list[i].buf_pos = 0;
+                    }
+                    workers_list[i].buf_size = workers_list[i].buf_pos;
+                }
+            }
+        }
+    }
+
+    /* After all workers are done, close summarizer stdin */
+    if (summary_stdin_fd >= 0) {
+        close(summary_stdin_fd);
+        summary_stdin_fd = -1;
+    }
+
+    /* Wait for summarizer process to terminate */
+    int summ_status;
+    if (waitpid(summary_pid, &summ_status, 0) < 0) {
+        fprintf(stderr, "Failed to wait for summarizer process\n");
+        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+    }
+    if (!WIFEXITED(summ_status) || WEXITSTATUS(summ_status) != 0) {
+        fprintf(stderr, "Summarizer process failed\n");
+        cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
+    }
+
+    /* Free worker list */
+    for (int i = 0; i < workers; i++) {
+        if (workers_list[i].current_file_path) {
+            free(workers_list[i].current_file_path);
+        }
+    }
+    free(workers_list);
+
+    return EXIT_SUCCESS;
 }
