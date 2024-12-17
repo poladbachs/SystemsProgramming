@@ -3,12 +3,12 @@ triple:          'x86_64-apple-darwin'
 binary-path:     multiproc
 relocations:
   - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001C60, symSize: 0xC80 }
-  - { offsetInCU: 0x4D, offset: 0x4D, size: 0x8, addend: 0x0, symName: _proc_prog, symObjAddr: 0x5B68, symBinAddr: 0x100008020, symSize: 0x0 }
-  - { offsetInCU: 0x67, offset: 0x67, size: 0x8, addend: 0x0, symName: _summ_prog, symObjAddr: 0x5B70, symBinAddr: 0x100008028, symSize: 0x0 }
-  - { offsetInCU: 0x7C, offset: 0x7C, size: 0x8, addend: 0x0, symName: _file_list_tail, symObjAddr: 0x5B78, symBinAddr: 0x100008030, symSize: 0x0 }
-  - { offsetInCU: 0xC7, offset: 0xC7, size: 0x8, addend: 0x0, symName: _nfiles, symObjAddr: 0x5B58, symBinAddr: 0x100008010, symSize: 0x0 }
+  - { offsetInCU: 0x4D, offset: 0x4D, size: 0x8, addend: 0x0, symName: _proc_prog, symObjAddr: 0x5B40, symBinAddr: 0x100008020, symSize: 0x0 }
+  - { offsetInCU: 0x67, offset: 0x67, size: 0x8, addend: 0x0, symName: _summ_prog, symObjAddr: 0x5B48, symBinAddr: 0x100008028, symSize: 0x0 }
+  - { offsetInCU: 0x7C, offset: 0x7C, size: 0x8, addend: 0x0, symName: _file_list_tail, symObjAddr: 0x5B50, symBinAddr: 0x100008030, symSize: 0x0 }
+  - { offsetInCU: 0xC7, offset: 0xC7, size: 0x8, addend: 0x0, symName: _nfiles, symObjAddr: 0x5B30, symBinAddr: 0x100008010, symSize: 0x0 }
   - { offsetInCU: 0xE3, offset: 0xE3, size: 0x8, addend: 0x0, symName: _workers, symObjAddr: 0x1C78, symBinAddr: 0x100008000, symSize: 0x0 }
-  - { offsetInCU: 0xF8, offset: 0xF8, size: 0x8, addend: 0x0, symName: _file_list_head, symObjAddr: 0x5B60, symBinAddr: 0x100008018, symSize: 0x0 }
+  - { offsetInCU: 0xF8, offset: 0xF8, size: 0x8, addend: 0x0, symName: _file_list_head, symObjAddr: 0x5B38, symBinAddr: 0x100008018, symSize: 0x0 }
   - { offsetInCU: 0x10D, offset: 0x10D, size: 0x8, addend: 0x0, symName: _summary_stdin_fd, symObjAddr: 0x1C7C, symBinAddr: 0x100008004, symSize: 0x0 }
   - { offsetInCU: 0x122, offset: 0x122, size: 0x8, addend: 0x0, symName: _summary_pid, symObjAddr: 0x1C80, symBinAddr: 0x100008008, symSize: 0x0 }
   - { offsetInCU: 0x1F4, offset: 0x1F4, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001C60, symSize: 0xC80 }

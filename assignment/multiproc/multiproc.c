@@ -13,7 +13,6 @@
  * - Does not implement advanced signal handling beyond basic error checking.
  */
 
-#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
