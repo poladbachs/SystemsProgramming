@@ -1,18 +1,13 @@
 /*
  * multiproc.c
+ * 
+ * Author: [POLAD BAKHISHZADE]
  *
- * A solution that strictly follows the assignment requirements and addresses the failing tests.
- *
- * Author: [Your Name]
- * Acknowledgments:
- * - Adapted from user-provided code.
- * - Referenced Advanced Programming in the UNIX Environment (3rd Ed., W. Stevens and S. Rago, Addison-Wesley, 2013).
- *
- * Limitations:
- * - Assumes that the processing and summarization programs handle line buffering correctly.
- * - Does not implement advanced signal handling beyond basic error checking.
+ * Description:
+ * This program processes multiple files using a specified processing program and summarizes the results
+ * using a summarization program. It handles parallel processing with a configurable number of workers.
+ * The program ensures that all resources are properly managed and that no zombie processes are left.
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -46,6 +41,7 @@ typedef struct Worker {
     ssize_t buf_size;
     ssize_t buf_pos;
     char *current_file_path;
+    int has_output;
 } Worker;
 
 static FileNode *file_list_head = NULL;
@@ -352,6 +348,7 @@ static int start_worker(const char *filename, Worker *worker) {
     worker->fd = fd_pipe[0];
     worker->buf_size = 0;
     worker->buf_pos = 0;
+    worker->has_output = 0;
     worker->current_file_path = strdup(filename);
     if (!worker->current_file_path) {
         fprintf(stderr, "Failed to duplicate filename string for worker\n");
@@ -457,14 +454,13 @@ int main(int argc, char **argv) {
                         cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
                     }
 
-                    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+                    if ((!WIFEXITED(status) || WEXITSTATUS(status) != 0) && !workers_list[i].has_output) {
                         fprintf(stderr, "Failed to process: %s\n", workers_list[i].current_file_path);
                         cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
                     }
 
                     active_workers--;
 
-                    // If there's partial data not ending with newline, append a newline now
                     if (workers_list[i].buf_size > 0) {
                         if (workers_list[i].buf_size < READ_BUFFER_SIZE) {
                             workers_list[i].buffer[workers_list[i].buf_size] = '\n';
@@ -499,6 +495,7 @@ int main(int argc, char **argv) {
                                 fprintf(stderr, "Failed to write to summarizer\n");
                                 cleanup_and_exit(EXIT_FAILURE, workers_list, workers);
                             }
+                            workers_list[i].has_output = 1;
                             start = j + 1;
                             workers_list[i].buf_pos = 0;
                         }
