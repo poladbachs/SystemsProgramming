@@ -1,13 +1,3 @@
-/*
- * multiproc.c
- * 
- * Author: [POLAD BAKHISHZADE]
- *
- * Description:
- * This program processes multiple files using a specified processing program and summarizes the results
- * using a summarization program. It handles parallel processing with a configurable number of workers.
- * The program ensures that all resources are properly managed and that no zombie processes are left.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
