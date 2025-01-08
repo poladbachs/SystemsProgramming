@@ -51,3 +51,8 @@ int new_trade(trades_log * l, double t, const char * s, double p, unsigned int q
     l->trim();
     return 1;
 }
+
+void clear(trades_log * l) {
+    l->trades.clear();
+}
+
