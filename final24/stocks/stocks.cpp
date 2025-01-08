@@ -85,3 +85,20 @@ double low_price(const trades_log * l) {
     }
     return p;
 }
+
+double stock_high_price(const trades_log * l, const char * symbol) {
+    double p = 0;
+    for (const trade & t : l->trades)
+        if (strcmp(symbol, t.symbol) == 0 && p < t.price)
+            p = t.price;
+    return p;
+}
+
+double stock_low_price(const trades_log * l, const char * symbol) {
+    double p = 0;
+    for (const trade & t : l->trades) 
+        if (strcmp(symbol, t.symbol) == 0 && p > t.price) {
+            p = t.price;
+        }
+    return p;
+}
