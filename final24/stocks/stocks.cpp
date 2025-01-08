@@ -67,3 +67,21 @@ unsigned int total_quantity(const trades_log * l) {
         q += t.quantity;
     return q;
 }
+
+double high_price(const trades_log * l) {
+    double p = 0;
+    for (const trade & t : l->trades)
+        if (p < t.price)
+            p = t.price;
+    return p;
+}
+
+double low_price(const trades_log * l) {
+    double p = 0;
+    for (const trade & t : l->trades) {
+        if (p == 0 || p > t.price) {
+            p = t.price;
+        }
+    }
+    return p;
+}
