@@ -102,3 +102,14 @@ double stock_low_price(const trades_log * l, const char * symbol) {
         }
     return p;
 }
+
+double stock_avg_price(const trades_log * l, const char * symbol) {
+    double p = 0;
+    unsigned int count = 0;
+    for (const trade & t : l->trades)
+        if(strcmp(symbol, t.symbol) == 0) {
+            p += t.price;
+            count += 1;
+        }
+    return (count == 0) ? 0 : p / count;
+}
