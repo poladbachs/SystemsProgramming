@@ -56,3 +56,14 @@ void clear(trades_log * l) {
     l->trades.clear();
 }
 
+void set_time_window(trades_log * l, double w) {
+    l->window = w;
+    l->trim();
+}
+
+unsigned int total_quantity(const trades_log * l) {
+    unsigned int q = 0;
+    for (const trade & t : l->trades)
+        q += t.quantity;
+    return q;
+}
