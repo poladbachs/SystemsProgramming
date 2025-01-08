@@ -2,6 +2,7 @@
     "files.associations": {
         "limits.h": "c",
         "new": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "list": "cpp"
     }
 }

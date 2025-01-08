@@ -26,3 +26,9 @@ struct trades_log * new_log() {
 void delete_log(struct trades_log * l) {
     delete(l);
 }
+
+void trades_log::trim() {
+    for (auto i = trades.begin(); i != trades.end() && i->time < (trades.back().time - window);
+        i = trades.begin())
+        trades.erase(i);
+}
