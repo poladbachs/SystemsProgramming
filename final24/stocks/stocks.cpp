@@ -32,3 +32,14 @@ void trades_log::trim() {
         i = trades.begin())
         trades.erase(i);
 }
+
+int new_trade(trades_log * l, double t, const char * s, double p, unsigned int q) {
+    if (q <= 0 || p <= 0) return 0;
+    if (!l->trades.empty() && t < l->trades.back().time) return 0;
+
+    trade tr;
+    tr.time = t;
+    tr.price = p;
+    tr.quantity = q;
+
+}
