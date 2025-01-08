@@ -42,4 +42,12 @@ int new_trade(trades_log * l, double t, const char * s, double p, unsigned int q
     tr.price = p;
     tr.quantity = q;
 
+    int i;
+    for (i = 0; i < MAX_STOCK_LEN && s[i] != 0; ++i)
+        tr.symbol[i] = s[i];
+    tr.symbol[i] = 0;
+
+    l->trades.push_back(tr);
+    l->trim();
+    return 1;
 }
