@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "limits.h": "c"
+        "limits.h": "c",
+        "new": "cpp",
+        "__config": "cpp"
     }
 }
