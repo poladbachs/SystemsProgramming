@@ -10,3 +10,10 @@ struct server {
     map<receiver *, set<set<string>>> subscriptions;
 };
 
+struct server * server_new() {
+    return new server();
+}
+
+void server_delete(struct server * s) {
+    delete(s);
+}
