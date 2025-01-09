@@ -4,3 +4,9 @@
 #include <algorithm>
 #include "messaging.h"
 
+using namespace std;
+
+struct server {
+    map<receiver *, set<set<string>>> subscriptions;
+};
+
