@@ -61,3 +61,7 @@ void remove_interest(struct server * srv, struct receiver * s, const char * tags
 void clear_receiver(struct server * srv, struct receiver * s) {
     srv->subscriptions.erase(s);
 }
+
+void clear_all (struct server * srv) {
+    srv->subscriptions.clear();
+}
