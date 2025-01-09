@@ -72,3 +72,12 @@ static bool match(const set<string> & tags, const set<set<string>> & sss) {
             return true;
     return false;
 }
+
+void send(const struct server * srv, const char * message) {
+    set<string> tags;
+    read_tags(message, tags);
+
+    for (auto & i : srv->subscriptions)
+        if (match(tags, i.second))
+            i.first->deliver(i.first, message);
+}
