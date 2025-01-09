@@ -41,3 +41,10 @@ static void read_tags(const char * m, set<string> & s) {
         s.insert(tag);
         goto init_state;
 }
+
+int add_interest(struct server * srv, struct receiver * s, const char * tagset) {
+    set<string> tags;
+    read_tags(tagset, tags);
+    srv->subscriptions[s].insert(tags);
+    return 1;
+}
