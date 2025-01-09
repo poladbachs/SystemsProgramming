@@ -31,7 +31,7 @@ static void read_tags(const char * m, set<string> & s) {
         if (*m == 0)
             return;
         m += 1;
-        goto reading_tag;
+        goto init_state;
     reading_tag:
         if(isalpha(*m)) {
             m += 1;
