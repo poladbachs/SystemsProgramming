@@ -65,3 +65,10 @@ void clear_receiver(struct server * srv, struct receiver * s) {
 void clear_all (struct server * srv) {
     srv->subscriptions.clear();
 }
+
+static bool match(const set<string> & tags, const set<set<string>> & sss) {
+    for (auto & ss : sss)
+        if (includes(tags.begin(), tags.end(), ss.begin(), ss.end()))
+            return true;
+    return false;
+}
