@@ -48,3 +48,12 @@ int add_interest(struct server * srv, struct receiver * s, const char * tagset) 
     srv->subscriptions[s].insert(tags);
     return 1;
 }
+
+void remove_interest(struct server * srv, struct receiver * s, const char * tagset) {
+    auto i = srv->subscriptions.find(s);
+    if (i != srv->subscriptions.end()) {
+        set<string> tags;
+        read_tags(tagset, tags);
+        i->second.erase(tags);
+    }
+}
