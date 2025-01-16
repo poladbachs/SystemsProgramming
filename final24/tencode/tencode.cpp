@@ -40,8 +40,6 @@ void encode(std::istream &input, std::ostream &output, std::ostream &error) {
             }
             if (std::isspace(static_cast<unsigned char>(content[i]))) {
                 words.push_back(std::string(1, content[i]));
-            } else if (content[i] == '\n') {
-                words.push_back("\n");
             }
         }
     }
