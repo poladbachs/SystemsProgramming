@@ -5,6 +5,11 @@
         "__config": "cpp",
         "list": "cpp",
         "set": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "iostream": "cpp",
+        "string": "cpp",
+        "exception": "cpp",
+        "iosfwd": "cpp",
+        "ios": "cpp"
     }
 }
