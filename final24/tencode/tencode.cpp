@@ -1,10 +1,12 @@
 #include <iostream>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include <cstdlib>
 
 struct WordGain {
     std::string word;
@@ -24,7 +26,7 @@ void encode(std::istream &input, std::ostream &output, std::ostream &error) {
     std::string content = buffer.str();
 
 
-    std::unordered_map<std::string, int> word_count;
+    std::unordered_map<std::string,int> word_count;
     std::vector<std::string> words;
     std::string w;
     for (size_t i = 0; i < content.size(); ++i) {
@@ -36,7 +38,7 @@ void encode(std::istream &input, std::ostream &output, std::ostream &error) {
                 word_count[w]++;
                 w.clear();
             }
-            if (!std::isspace(static_cast<unsigned char>(content[i]))) {
+            if (std::isspace(static_cast<unsigned char>(content[i]))) {
                 words.push_back(std::string(1, content[i]));
             } else if (content[i] == '\n') {
                 words.push_back("\n");
@@ -49,7 +51,8 @@ void encode(std::istream &input, std::ostream &output, std::ostream &error) {
     }
 
     std::vector<WordGain> gains;
-    for (std::unordered_map<std::string, int>::iterator it = word_count.begin(); it != word_count.end(); ++it) {
+    gains.reserve(word_count.size());
+    for (std::unordered_map<std::string,int>::iterator it = word_count.begin(); it != word_count.end(); ++it) {
         const std::string &wd = it->first;
         int c = it->second;
         unsigned lw = (unsigned)wd.size();
