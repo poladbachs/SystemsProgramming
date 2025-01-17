@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <cctype>
+#include <cstdlib>
 
 void decode(std::istream &input, std::ostream &output, std::ostream &error) {
     std::unordered_map<unsigned char, std::string> code_map;
@@ -22,17 +23,15 @@ void decode(std::istream &input, std::ostream &output, std::ostream &error) {
             value += line[pos++];
         }
 
-        if (value.empty()) {
-            error << "Error: Invalid encoding map." << std::endl;
+        if (value.empty() || code_map.find(key) != code_map.end()) {
+            error << "Error: Invalid or duplicate mapping for byte " << (int)key << std::endl;
             exit(EXIT_FAILURE);
         }
 
         code_map[key] = value;
     }
 
-    std::string decoded_text;
-    decoded_text += line.substr(pos);
-
+    std::string decoded_text = line.substr(pos);
     while (std::getline(input, line)) {
         for (size_t i = 0; i < line.size(); ++i) {
             unsigned char ch = static_cast<unsigned char>(line[i]);
